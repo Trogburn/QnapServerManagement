@@ -666,6 +666,7 @@ public sealed class MainViewModelDateWorkflowTests : TestBase
             new WorkflowStateMachine(),
             store,
             new DateRepairService(policy),
+            new OrientationRepairService(policy),
             new DuplicateWorkflowService(new PowerShellScriptRunner(), store, policy, root),
             new FakeConfirmationService(true))
         {

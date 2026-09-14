@@ -265,14 +265,15 @@ public sealed class DateWorkflowViewModel : ObservableObject
             if (_host.Workflow.Session.State is WorkflowState.Configured
                 or WorkflowState.ScanReady
                 or WorkflowState.Reviewing
-                or WorkflowState.DateReviewReady)
+                or WorkflowState.DateReviewReady
+                or WorkflowState.RotateReviewReady)
             {
                 if (_host.Workflow.Session.State == WorkflowState.Configured)
                 {
                     _host.Workflow.TransitionTo(WorkflowState.Scanning, "Date evidence scan started.");
                     _host.Workflow.TransitionTo(WorkflowState.ScanReady, "Date evidence scan completed.");
                 }
-                if (_host.Workflow.Session.State == WorkflowState.ScanReady)
+                if (_host.Workflow.Session.State is WorkflowState.ScanReady or WorkflowState.RotateReviewReady)
                 {
                     _host.Workflow.TransitionTo(WorkflowState.DateReviewReady, "Date evidence is ready for review.");
                 }
@@ -514,6 +515,7 @@ public sealed class DateWorkflowViewModel : ObservableObject
             or WorkflowState.ScanReady
             or WorkflowState.Reviewing
             or WorkflowState.DateReviewReady
+            or WorkflowState.RotateReviewReady
             or WorkflowState.RemediationApplied
             or WorkflowState.Completed;
 

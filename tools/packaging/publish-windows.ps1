@@ -63,6 +63,7 @@ $required = @(
     'PhotoManager.exe',
     'tools\czkawka\scan.ps1',
     'tools\czkawka\repair-dates.ps1',
+    'tools\czkawka\repair-orientation.ps1',
     'tools\czkawka\remediate.ps1',
     'tools\czkawka\config.json',
     'tools\czkawka\bin\czkawka_cli.exe',

@@ -1,8 +1,9 @@
 # PhotoManager tests
 
 This xUnit project validates the WPF application's non-UI safety boundaries.
-It uses only temporary directories and does not connect to a NAS share,
-invoke Czkawka, or modify repository media.
+It uses only temporary directories and does not invoke Czkawka or modify
+repository media. One optional orientation test reads FinePix samples from the
+lab share when that share is mounted; it does not write those files.
 
 Run it from the repository root:
 
@@ -20,8 +21,8 @@ The command exits with code `0` only when every test passes. It covers:
 - Workflow transition, failure, and snapshot-confirmation safeguards.
 - Date apply-candidate eligibility.
 
-The test project targets `net10.0-windows` because it references the WPF
-application project. The checks are intentionally fast enough to run before
+The test project targets `net10.0-windows10.0.19041.0` because it references the WPF
+application project and Windows OCR APIs. The checks are intentionally fast enough to run before
 every local change and after publishing a new build.
 
 The separate `PhotoManager.UiTests` project contains FlaUI desktop

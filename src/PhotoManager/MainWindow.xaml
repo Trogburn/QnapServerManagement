@@ -104,6 +104,8 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -137,17 +139,23 @@
                             Command="{x:Static ApplicationCommands.Paste}" CommandTarget="{Binding ElementName=QuarantineRootBox}"
                             Content="Paste" />
                     <TextBlock Grid.Row="6" Margin="0,20,0,0" Foreground="Gray" TextWrapping="Wrap"
-                               Text="Duplicate work and date work are separate. Finish or leave a workflow, then choose the next one here." />
+                               Text="Rotate, duplicate, and date work are separate. Finish or leave a workflow, then choose the next one here." />
                     <Button Grid.Row="7" Margin="0,12,0,0"
+                            AutomationProperties.AutomationId="StartRotateWorkButton"
+                            Command="{Binding StartRotateWorkCommand}" Content="Start rotate work" />
+                    <Button Grid.Row="8" Margin="0,8,0,0"
+                            AutomationProperties.AutomationId="ContinueRotateWorkButton"
+                            Command="{Binding ContinueRotateWorkCommand}" Content="Continue rotate work" />
+                    <Button Grid.Row="9" Margin="0,8,0,0"
                             AutomationProperties.AutomationId="ConfigureDuplicatesButton"
                             Command="{Binding ConfigureDuplicatesCommand}" Content="Configure and continue to duplicate work" />
-                    <Button Grid.Row="8" Margin="0,8,0,0"
+                    <Button Grid.Row="10" Margin="0,8,0,0"
                             AutomationProperties.AutomationId="ContinueDuplicateWorkButton"
                             Command="{Binding ContinueDuplicateWorkCommand}" Content="Continue duplicate work" />
-                    <Button Grid.Row="9" Margin="0,8,0,0"
+                    <Button Grid.Row="11" Margin="0,8,0,0"
                             AutomationProperties.AutomationId="StartDateWorkButton"
                             Command="{Binding StartDateWorkCommand}" Content="Start date work" />
-                    <Button Grid.Row="10" Margin="0,8,0,0"
+                    <Button Grid.Row="12" Margin="0,8,0,0"
                             AutomationProperties.AutomationId="ContinueDateWorkButton"
                             Command="{Binding ContinueDateWorkCommand}" Content="Continue date work" />
                 </Grid>
@@ -430,6 +438,193 @@
                     <TextBlock Foreground="Gray" Text="{Binding DateSnapshotName}" TextTrimming="CharacterEllipsis" />
                     <TextBlock Foreground="Gray" Text="{Binding DateReportPath}" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Grid.Row="2" AutomationProperties.AutomationId="RotateWorkPage"
+                  Header="Rotate work" Visibility="{Binding RotateWorkPageVisibility}" Margin="0,0,0,12">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <WrapPanel>
+                    <Button AutomationProperties.AutomationId="ScanRotationsButton"
+                            Command="{Binding ScanRotationsCommand}" Content="Scan" />
+                    <Button AutomationProperties.AutomationId="ApproveAllProposedRotationsButton"
+                            Margin="8,0,0,0" Command="{Binding ApproveAllProposedRotationsCommand}" Content="Approve all proposed" />
+                    <Button AutomationProperties.AutomationId="CreateRotateSnapshotButton"
+                            Margin="8,0,0,0" Command="{Binding CreateRotateSnapshotCommand}" Content="Snapshot" />
+                    <CheckBox AutomationProperties.AutomationId="RotateSnapshotConfirmedCheckBox"
+                              Margin="14,4,0,0"
+                              IsEnabled="{Binding CanConfirmRotateSnapshot}"
+                              IsChecked="{Binding RotateSnapshotConfirmed}" Content="Confirm snapshot before rotate" />
+                    <Button AutomationProperties.AutomationId="ApplyRotationsButton"
+                            Margin="14,0,0,0" Command="{Binding ApplyRotationsCommand}" Content="Apply rotations" />
+                    <Button AutomationProperties.AutomationId="OpenRotateUndoButton"
+                            Margin="8,0,0,0" Command="{Binding OpenRotateUndoCommand}" Content="Undo applied rotations" />
+                </WrapPanel>
+                <Grid Grid.Row="1" Margin="0,8,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.35*" />
+                        <ColumnDefinition Width="0.9*" />
+                    </Grid.ColumnDefinitions>
+                    <ListBox AutomationProperties.AutomationId="RotateReviewList"
+                             ItemsSource="{Binding RotateItems}"
+                             SelectedItem="{Binding SelectedRotateItem, Mode=TwoWay}"
+                             HorizontalContentAlignment="Stretch"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,0,0,6" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="12,8" BorderBrush="#DDDDE3" BorderThickness="1" CornerRadius="4">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="White" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsApproved}" Value="True">
+                                                    <Setter Property="Background" Value="#F0F7F3" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsSkipped}" Value="True">
+                                                    <Setter Property="Background" Value="#F7F7F8" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <DockPanel>
+                                                <Border DockPanel.Dock="Right" Margin="8,0,0,0" Style="{StaticResource ConfidenceBadge}">
+                                                    <TextBlock FontWeight="SemiBold" Text="{Binding Confidence}" />
+                                                </Border>
+                                                <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding FileName}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </DockPanel>
+                                            <TextBlock Margin="0,2,0,0" Foreground="#6B7280" FontSize="12"
+                                                       Text="{Binding Path}" TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding Path}" />
+                                            <TextBlock Margin="0,6,0,0" FontSize="14" FontWeight="SemiBold"
+                                                       Foreground="#0F6A43" Text="{Binding DecisionHeadline}"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Margin="0,4,0,0" Foreground="#374151"
+                                                       Text="{Binding DecisionStatusLine}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="16,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <StackPanel.Style>
+                                                <Style TargetType="StackPanel">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsReviewable}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </StackPanel.Style>
+                                            <Button Command="{Binding ApproveCommand}" Content="Approve"
+                                                    Style="{StaticResource DateDecisionButton}" />
+                                            <Button Margin="8,0,0,0" Command="{Binding SkipCommand}" Content="Skip"
+                                                    Style="{StaticResource DateDecisionButton}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <DockPanel Grid.Column="1" Margin="16,0,0,0">
+                        <TextBlock DockPanel.Dock="Top" FontWeight="SemiBold" Text="Corrected preview" />
+                        <TextBlock DockPanel.Dock="Top" Margin="0,4,0,0" Foreground="#6B7280"
+                                   Text="{Binding SelectedRotateItem.Path}" TextTrimming="CharacterEllipsis"
+                                   ToolTip="{Binding SelectedRotateItem.Path}" />
+                        <TextBlock DockPanel.Dock="Top" Margin="0,8,0,0" TextWrapping="Wrap"
+                                   Text="{Binding SelectedRotateItem.ProposedRotation}" />
+                        <TextBlock DockPanel.Dock="Top" Margin="0,8,0,0" TextWrapping="Wrap"
+                                   Text="{Binding SelectedRotateItem.Reason}" />
+                        <StackPanel DockPanel.Dock="Top" Margin="0,12,0,0">
+                            <Image AutomationProperties.AutomationId="RotatePreviewImage"
+                                   Source="{Binding RotatePreview}" MaxHeight="220" MaxWidth="280"
+                                   Stretch="Uniform" />
+                            <WrapPanel Margin="0,8,0,0">
+                                <Button AutomationProperties.AutomationId="RotateSelectedCounterClockwiseButton"
+                                        Command="{Binding RotateSelectedCounterClockwiseCommand}"
+                                        Content="90° CCW"
+                                        ToolTip="Rotate the stored pixels 90° counter-clockwise in the preview. Apply writes that into the file." />
+                                <Button AutomationProperties.AutomationId="RotateSelected180Button"
+                                        Margin="8,0,0,0"
+                                        Command="{Binding RotateSelected180Command}"
+                                        Content="180°"
+                                        ToolTip="Rotate the stored pixels 180° in the preview. Apply writes that into the file." />
+                                <Button AutomationProperties.AutomationId="RotateSelectedClockwiseButton"
+                                        Margin="8,0,0,0"
+                                        Command="{Binding RotateSelectedClockwiseCommand}"
+                                        Content="90° CW"
+                                        ToolTip="Rotate the stored pixels 90° clockwise in the preview. Apply writes that into the file." />
+                                <Button AutomationProperties.AutomationId="ResetSelectedRotationButton"
+                                        Margin="8,0,0,0"
+                                        Command="{Binding ResetSelectedRotationCommand}"
+                                        Content="Reset"
+                                        ToolTip="Restore the scan proposal for this photo." />
+                            </WrapPanel>
+                            <TextBlock Margin="0,8,0,0" Foreground="#6B7280" TextWrapping="Wrap"
+                                       Text="{Binding RotatePreviewMessage}" />
+                            <TextBlock Margin="0,8,0,0" Text="{Binding SelectedRotateItem.Dimensions, StringFormat=Stored pixels: {0}}" />
+                            <TextBlock Text="{Binding SelectedRotateItem.OrientationDescription, StringFormat=EXIF: {0}}" />
+                        </StackPanel>
+                        <TextBlock />
+                    </DockPanel>
+                </Grid>
+                <StackPanel Grid.Row="2">
+                    <TextBlock Text="{Binding RotateSummary}" />
+                    <TextBlock Foreground="Gray" Text="{Binding RotateSnapshotName}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Foreground="Gray" Text="{Binding RotateReportPath}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Margin="0,4,0,0" Foreground="Gray" TextWrapping="Wrap"
+                               Text="Apply copies the original to a local backup, then bakes the proposed rotation into the pixels. JPEG is re-encoded. Undo restores the backup, not an inverse rotate. If EXIF says Normal but the preview is still sideways, use the rotate buttons." />
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Grid.Row="2" AutomationProperties.AutomationId="RotateUndoPage"
+                  Header="Rotate undo" Visibility="{Binding RotateUndoPageVisibility}" Margin="0,0,0,12">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <WrapPanel>
+                    <Button AutomationProperties.AutomationId="SelectAllRotateUndoButton"
+                            Command="{Binding SelectAllRotateUndoCommand}" Content="Select all" />
+                    <Button AutomationProperties.AutomationId="UndoSelectedRotationsButton"
+                            Margin="8,0,0,0" Command="{Binding UndoSelectedRotationsCommand}" Content="Undo" />
+                </WrapPanel>
+                <DataGrid Grid.Row="1" Margin="0,12,0,0"
+                          AutomationProperties.AutomationId="RotateUndoGrid"
+                          ItemsSource="{Binding RotateUndoItems}" AutoGenerateColumns="False" CanUserAddRows="False"
+                          HeadersVisibility="Column">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Select" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="220" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Was" Binding="{Binding OrientationBefore}" Width="60" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Path" Binding="{Binding Path}" Width="*" IsReadOnly="True" />
+                    </DataGrid.Columns>
+                </DataGrid>
             </Grid>
         </GroupBox>
 

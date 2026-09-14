@@ -428,6 +428,7 @@ public sealed class DuplicateWorkflowViewModel : ObservableObject
             or WorkflowState.Configured
             or WorkflowState.ScanReady
             or WorkflowState.DateReviewReady
+            or WorkflowState.RotateReviewReady
             or WorkflowState.Completed
             or WorkflowState.Failed;
 
@@ -438,7 +439,9 @@ public sealed class DuplicateWorkflowViewModel : ObservableObject
     private bool CanScanDuplicates() =>
         !_duplicateScanInProgress
         && _host.CurrentPage == WorkflowPage.DuplicateWork
-        && _host.Workflow.Session.State is WorkflowState.Configured or WorkflowState.DateReviewReady;
+        && _host.Workflow.Session.State is WorkflowState.Configured
+            or WorkflowState.DateReviewReady
+            or WorkflowState.RotateReviewReady;
 
     private bool CanDuplicateDryRun() =>
         _duplicateArtifacts is not null

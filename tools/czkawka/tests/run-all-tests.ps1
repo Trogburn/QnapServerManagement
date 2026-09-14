@@ -17,7 +17,8 @@ $tests = @(
     'phase5-tests.ps1',
     'phase6-tests.ps1',
     'phase7-tests.ps1',
-    'phase8-tests.ps1'
+    'phase8-tests.ps1',
+    'phase-orientation-tests.ps1'
 )
 
 foreach ($test in $tests) {

@@ -81,10 +81,12 @@ public sealed class DuplicateWorkflowService
         bool fresh,
         CancellationToken cancellationToken = default)
     {
-        if (workflow.Session.State is not (WorkflowState.Configured or WorkflowState.DateReviewReady))
+        if (workflow.Session.State is not (WorkflowState.Configured
+            or WorkflowState.DateReviewReady
+            or WorkflowState.RotateReviewReady))
         {
             throw new InvalidOperationException(
-                $"Workflow must be {WorkflowState.Configured} or {WorkflowState.DateReviewReady} to start a duplicate scan.");
+                $"Workflow must be {WorkflowState.Configured}, {WorkflowState.DateReviewReady}, or {WorkflowState.RotateReviewReady} to start a duplicate scan.");
         }
 
         workflow.TransitionTo(WorkflowState.Scanning, "Starting read-only Czkawka scan.");

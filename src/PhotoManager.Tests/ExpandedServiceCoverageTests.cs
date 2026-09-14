@@ -166,6 +166,20 @@ public sealed class WorkflowStateMachineCoverageTests : TestBase
     }
 
     [Fact]
+    public void RotateReviewReadyCanStartADuplicateScan()
+    {
+        var workflow = new WorkflowStateMachine();
+        workflow.TransitionTo(WorkflowState.Configured);
+        workflow.TransitionTo(WorkflowState.Scanning);
+        workflow.TransitionTo(WorkflowState.ScanReady);
+        workflow.TransitionTo(WorkflowState.RotateReviewReady);
+
+        workflow.TransitionTo(WorkflowState.Scanning, "sibling duplicate scan");
+
+        Assert.Equal(WorkflowState.Scanning, workflow.Session.State);
+    }
+
+    [Fact]
     public void FailedBranchSetsErrorAndCanRecover()
     {
         var workflow = new WorkflowStateMachine();

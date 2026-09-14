@@ -65,6 +65,13 @@ Build a low-maintenance Windows workflow around the unchanged Czkawka CLI. The C
 - Add optional Task Scheduler guidance only after the manual workflow is stable; scheduled runs should scan and report, never quarantine automatically.
 - Keep the project dependency-light: PowerShell plus Windows/.NET built-ins, Czkawka CLI, and no database or web server unless the native reviewer proves inadequate.
 
+### 8. EXIF auto-rotate
+
+- Add a sibling review-first workflow that reads EXIF Orientation on JPEG/TIFF and proposes baking that rotation into stored pixels.
+- When EXIF is Normal or missing, propose a rotation from photo content (Windows OCR and faces) at Medium confidence. Reviewers can also choose 90°/180° from the preview.
+- Default remains dry-run. Apply copies the original to a local backup, rotates pixels, sets Orientation to Normal, and re-encodes JPEG. Undo restores the backup bytes.
+- Preview the corrected photo in the WPF review page before Apply. Snapshot confirmation is required, matching date work.
+
 ## Planned Files
 
 - `README.md` - Document the end-to-end workflow and safety model.
@@ -73,6 +80,7 @@ Build a low-maintenance Windows workflow around the unchanged Czkawka CLI. The C
 - `tools/czkawka/scan.ps1` - Process runner, diagnostics, raw artifact capture, and scan metadata.
 - `tools/czkawka/parse-results.ps1` or a small local parser module - Isolate Czkawka JSON-shape handling and emit the stable schema.
 - `tools/czkawka/classify-results.ps1` - Evidence-based confidence tiers and keep recommendations.
+- `tools/czkawka/repair-orientation.ps1` - EXIF orientation inspection, dry-run proposals, bake-in apply with original backups, and undo.
 - `tools/czkawka/repair-dates.ps1` - Metadata/filename date inspection, dry-run proposals, timestamp updates, and undo manifest.
 - `tools/czkawka/review.ps1` - Native Windows group review UI and explicit action capture, including date-repair approvals.
 - `tools/czkawka/remediate.ps1` - Verified quarantine, transaction logging, dry-run, and undo.
@@ -88,6 +96,7 @@ Build a low-maintenance Windows workflow around the unchanged Czkawka CLI. The C
 5. Open the native reviewer and manually process exact duplicates, different-name same-content files, resized copies, thumbnails, ambiguous matches, and date-repair proposals.
 6. Execute remediation in dry-run, then quarantine a test group and apply an approved timestamp change; verify stale-file protection, transaction logs, and undo for both operations. Automated tests cover a same-volume temporary quarantine; validate the configured network-share quarantine location separately before production use.
 7. Run PowerShell syntax checks and all local parser/classifier/date-repair tests before any Task Scheduler integration.
+8. Run orientation dry-run against JPEG fixtures with Orientation 1 and 6; apply one approved rotation; confirm pixels/dimensions change, a backup exists, and undo restores the original SHA-256.
 
 ## Decisions
 
@@ -95,11 +104,12 @@ Build a low-maintenance Windows workflow around the unchanged Czkawka CLI. The C
 - Windows-local orchestration and review; scan data lives on the network share but reports/logs remain local by default.
 - Read-only detection and date inspection first; quarantine rather than delete; undo is required before routine use.
 - Use a native reviewer for actions and static HTML/JSON for report portability. Do not depend on a browser being allowed to manipulate UNC files.
-- Keep confidence explainable and advisory. No automatic deletion, timestamp changes, or automatic keep decisions.
+- Keep confidence explainable and advisory. No automatic deletion, timestamp changes, pixel rewrites, or automatic keep decisions.
 - Treat capture time and filesystem time as separate concepts; default to changing Windows CreationTime for album sorting while preserving LastWriteTime unless the user explicitly selects a different policy.
 - Naive EXIF and filename timestamps are unspecified local time. Explicit offsets and Zulu timestamps convert to UTC. Capture evidence within 59 seconds is equivalent; otherwise, disagreeing UTC instants are conflicts, not guesses.
 - High-confidence EXIF batch apply requires `-ApproveHighConfidence` in addition to `-Apply`. Individual items still use approve paths or a decision file.
 - Start with `dup` hash mode and `image`; add name/size modes only if real scan results show a useful gap.
+- Auto-rotate uses EXIF Orientation first. If the tag is Normal or missing, the app may propose a content-based 90°/180° rotation. Bake pixels after review; keep original bytes in a backup for undo.
 
 ## Further Considerations
 

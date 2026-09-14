@@ -10,9 +10,10 @@ public sealed class WorkflowStateMachine
             [WorkflowState.Idle] = [WorkflowState.Configured, WorkflowState.Failed],
             [WorkflowState.Configured] = [WorkflowState.Scanning, WorkflowState.Failed],
             [WorkflowState.Scanning] = [WorkflowState.ScanReady, WorkflowState.Failed],
-            [WorkflowState.ScanReady] = [WorkflowState.Reviewing, WorkflowState.DateReviewReady, WorkflowState.Failed],
-            [WorkflowState.Reviewing] = [WorkflowState.DateReviewReady, WorkflowState.RemediationReady, WorkflowState.Failed],
-            [WorkflowState.DateReviewReady] = [WorkflowState.Scanning, WorkflowState.Reviewing, WorkflowState.RemediationReady, WorkflowState.Failed],
+            [WorkflowState.ScanReady] = [WorkflowState.Reviewing, WorkflowState.DateReviewReady, WorkflowState.RotateReviewReady, WorkflowState.Failed],
+            [WorkflowState.Reviewing] = [WorkflowState.DateReviewReady, WorkflowState.RotateReviewReady, WorkflowState.RemediationReady, WorkflowState.Failed],
+            [WorkflowState.DateReviewReady] = [WorkflowState.Scanning, WorkflowState.Reviewing, WorkflowState.RotateReviewReady, WorkflowState.RemediationReady, WorkflowState.Failed],
+            [WorkflowState.RotateReviewReady] = [WorkflowState.Scanning, WorkflowState.Reviewing, WorkflowState.DateReviewReady, WorkflowState.RemediationReady, WorkflowState.Failed],
             [WorkflowState.RemediationReady] = [WorkflowState.RemediationApplied, WorkflowState.Failed],
             [WorkflowState.RemediationApplied] = [WorkflowState.Completed, WorkflowState.Failed],
             [WorkflowState.Completed] = [WorkflowState.Configured, WorkflowState.RemediationApplied],
@@ -69,7 +70,9 @@ public sealed class WorkflowStateMachine
                 ScanArtifactPath = scanArtifactPath ?? _session.ScanArtifactPath,
                 ReviewArtifactPath = reviewArtifactPath ?? _session.ReviewArtifactPath,
                 Error = next == WorkflowState.Failed ? reason : null,
-                SnapshotConfirmed = next is WorkflowState.DateReviewReady or WorkflowState.RemediationReady
+                SnapshotConfirmed = next is WorkflowState.DateReviewReady
+                    or WorkflowState.RotateReviewReady
+                    or WorkflowState.RemediationReady
                     ? _session.SnapshotConfirmed
                     : false
             };
@@ -100,6 +103,7 @@ public sealed class WorkflowStateMachine
         lock (_sync)
         {
             if (confirmed && _session.State is not WorkflowState.DateReviewReady
+                and not WorkflowState.RotateReviewReady
                 and not WorkflowState.RemediationReady)
             {
                 throw new InvalidOperationException(

@@ -28,6 +28,8 @@ public sealed class MainWindowUiTests
                 condition.ByAutomationId("DateWorkPage")));
             Assert.True(Find(window, "StartDateWorkButton").IsEnabled);
             Assert.False(Find(window, "ContinueDateWorkButton").IsEnabled);
+            Assert.True(Find(window, "StartRotateWorkButton").IsEnabled);
+            Assert.False(Find(window, "ContinueRotateWorkButton").IsEnabled);
             Assert.True(Find(window, "ConfigureDuplicatesButton").IsEnabled);
         }
         finally

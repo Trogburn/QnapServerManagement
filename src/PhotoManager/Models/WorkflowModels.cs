@@ -8,6 +8,7 @@ public enum WorkflowState
     ScanReady,
     Reviewing,
     DateReviewReady,
+    RotateReviewReady,
     RemediationReady,
     RemediationApplied,
     Completed,

@@ -1,5 +1,5 @@
 # PhotoManager
-A Windows app for review-first photo duplicate quarantine and date repair. It works against a UNC share (including a QNAP NAS) or a local folder. Nothing moves or changes timestamps until you Apply.
+A Windows app for review-first photo duplicate quarantine, date repair, and EXIF auto-rotate. It works against a UNC share (including a QNAP NAS) or a local folder. Nothing moves, changes timestamps, or rewrites image pixels until you Apply.
 
 Windows users can download `PhotoManager-*-win-x64.zip` from a GitHub Release, extract it, and follow [tools/packaging/GETTING_STARTED.md](tools/packaging/GETTING_STARTED.md) (also inside the zip). That install does not require this repository. macOS is not supported. Developer rebuild and upgrade notes are in [src/PhotoManager/OPERATIONS.md](src/PhotoManager/OPERATIONS.md).
 
@@ -20,6 +20,7 @@ This repository now includes a pinned Windows installation and read-only scan wo
 - `tools/czkawka/tests/phase2-smoke.ps1` - Runs a deterministic grouped-result parser smoke test.
 - `tools/czkawka/tests/phase2-tests.ps1` - Runs the broader Phase 2 fixture and error-handling tests.
 - `tools/czkawka/repair-dates.ps1` - Produces a dry-run date-evidence report and supports explicitly approved timestamp changes with an undo manifest.
+- `tools/czkawka/repair-orientation.ps1` - Produces a dry-run EXIF orientation report and bakes approved rotations into JPEG/TIFF pixels with original-file backups for undo. The app scan also proposes content-based rotations when EXIF says the pixels are already upright.
 - `tools/czkawka/tests/phase3-smoke.ps1` and `tools/czkawka/tests/phase3-tests.ps1` - Validate Phase 3 evidence, dry-run, approval, and undo behavior.
 - `tools/czkawka/classify-results.ps1` - Merges overlapping normalized findings into explainable, advisory review groups with confidence tiers and keep suggestions.
 - `tools/czkawka/tests/phase4-tests.ps1` - Validates deterministic grouping, confidence tiers, labels, evidence retention, and protected-reference behavior.
@@ -64,6 +65,13 @@ pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\tools\czkawka\review.ps1
 
 # Inspect date evidence without changing files
 pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\tools\czkawka\repair-dates.ps1 -Path "\\server\photos" -Recurse
+
+# Inspect EXIF orientation without changing files
+pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\tools\czkawka\repair-orientation.ps1 -Path "\\server\photos" -Recurse
+
+# Apply approved orientation changes from a decision file, then undo from backups
+pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\tools\czkawka\repair-orientation.ps1 -ReviewPath .\reports\rotate\orientation-review.json -DecisionPath .\reports\rotate\orientation-decisions.json -Apply
+pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\tools\czkawka\repair-orientation.ps1 -Undo -UndoManifestPath .\reports\rotate\orientation-undo.jsonl
 
 # Apply a reviewed report using explicit decisions, then undo if needed
 pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\tools\czkawka\repair-dates.ps1 -ReviewPath .\reports\dates\date-review.json -DecisionPath .\reports\dates\decisions.json -Apply
@@ -113,6 +121,7 @@ Task Scheduler is optional and must run only the read-only scan/report path. Con
 - The Phase 5 reviewer visibly shows confidence, explanation, evidence, path/filename, dimensions, size, modified time, proposed date, access state, and suggested keep. It writes `review.html` with case-insensitive client-side search and `review.json` with searchable group/item fields for archival or scripted filtering. Missing, inaccessible, and UNC-shaped paths remain visible; exports perform no filesystem actions.
 - Date repair is dry-run by default. EXIF `DateTimeOriginal` outranks digitized date, then filename, then folder names. Sidecars are excluded. Naive timestamps are unspecified local time; explicit offsets convert to UTC. Capture evidence within 59 seconds is equivalent; otherwise invalid, ambiguous, conflicting, or future dates are not applied automatically.
 - Timestamp changes require `-Apply` plus an explicit approve path, decision file, or `-ApproveHighConfidence` for high-confidence EXIF items. The default policy changes CreationTime only, records an append-only undo manifest, and supports `-Undo`.
+- Orientation repair is dry-run by default. It reads EXIF Orientation (tag `0x0112`) on JPEG/TIFF and proposes a bake-in rotation for values 2-8. When the tag is Normal or missing, the app scan also looks at photo content (Windows OCR and faces) and can propose a 90°/180° rotation at Medium confidence. You can override any JPEG/TIFF with the preview rotate buttons. Apply copies the original to a local backup, rotates pixels, sets Orientation to Normal, and re-encodes JPEG. Undo restores the backup bytes; it does not inverse-rotate.
 - Saved reports are revalidated for file size and LastWriteTime before changes. Decision files support `skip`, `protect`, `approve`, and `manual` actions; manual decisions must include a `date` value.
 - Classification is advisory only. It merges overlapping findings, retains original evidence edges plus repeated-path metadata/warning/access/stale evidence, marks protected/reference items, and never deletes, moves, or changes timestamps. Protected and preferred directory rules match complete directory boundaries rather than similarly named sibling folders.
 - Remediation is quarantine-only and dry-run by default. It revalidates size and modified time plus comparable 64-hex SHA-256 evidence, refuses stale/protected/excluded files, uses collision-safe destinations, and appends transaction entries with explicit pre-move and post-move evidence for guarded undo. Permission failures leave the source in place and are logged; it never enables Czkawka deletion flags.

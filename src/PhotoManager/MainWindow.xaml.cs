@@ -26,6 +26,7 @@ public partial class MainWindow : Window
             new WorkflowStateMachine(),
             artifactStore,
             new DateRepairService(pathPolicy),
+            new OrientationRepairService(pathPolicy),
             duplicateWorkflow,
             confirmationService,
             localDefaults);

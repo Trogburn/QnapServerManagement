@@ -17,6 +17,7 @@ The source of truth for product direction and safety decisions is [PLAN.md](PLAN
 | 5 | Native Windows review experience | Complete | 100% | Phase 4 |
 | 6 | Safe remediation and undo | Complete | 100% | Phase 5 |
 | 7 | Operational polish | Complete | 100% | Phase 6 |
+| 8 | EXIF auto-rotate | Complete | 100% | Phase 7 |
 
 ### Status Definitions
 
@@ -29,7 +30,7 @@ The source of truth for product direction and safety decisions is [PLAN.md](PLAN
 
 - Phase percentages are based only on completed deliverables listed in that phase.
 - A phase is not complete because files exist; its validation and acceptance checks must pass.
-- Overall progress is the average of the seven phase percentages, rounded to the nearest whole number, unless a phase is explicitly blocked by an external dependency.
+- Overall progress is the average of the eight phase percentages, rounded to the nearest whole number, unless a phase is explicitly blocked by an external dependency.
 - When updating status, record the date, changed files, validation performed, and any blocker in the phase section.
 - Do not mark future phases complete based on design work alone.
 

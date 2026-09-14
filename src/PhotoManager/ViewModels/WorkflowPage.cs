@@ -5,5 +5,7 @@ public enum WorkflowPage
     Configuration,
     DuplicateWork,
     DateWork,
-    DateUndo
+    DateUndo,
+    RotateWork,
+    RotateUndo
 }

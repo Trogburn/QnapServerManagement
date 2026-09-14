@@ -23,6 +23,7 @@ public sealed class MainViewModel : ObservableObject, IShellWorkflowHost
         WorkflowStateMachine workflow,
         AtomicArtifactStore artifactStore,
         DateRepairService dateRepairService,
+        OrientationRepairService orientationRepairService,
         DuplicateWorkflowService duplicateWorkflow,
         IConfirmationService confirmationService,
         LocalDefaults? localDefaults = null)
@@ -32,8 +33,10 @@ public sealed class MainViewModel : ObservableObject, IShellWorkflowHost
         _confirmationService = confirmationService ?? throw new ArgumentNullException(nameof(confirmationService));
         ApplyLocalDefaults(localDefaults);
         DateWork = new DateWorkflowViewModel(dateRepairService, this);
+        RotateWork = new RotateWorkflowViewModel(orientationRepairService, this);
         DuplicateWork = new DuplicateWorkflowViewModel(duplicateWorkflow, this);
         DateWork.PropertyChanged += ForwardChildPropertyChanged;
+        RotateWork.PropertyChanged += ForwardChildPropertyChanged;
         DuplicateWork.PropertyChanged += ForwardChildPropertyChanged;
         StartCommand = new RelayCommand(Start);
         ResetCommand = new RelayCommand(Reset);
@@ -41,6 +44,7 @@ public sealed class MainViewModel : ObservableObject, IShellWorkflowHost
     }
 
     public DateWorkflowViewModel DateWork { get; }
+    public RotateWorkflowViewModel RotateWork { get; }
     public DuplicateWorkflowViewModel DuplicateWork { get; }
 
     public string ScanRoot
@@ -78,6 +82,12 @@ public sealed class MainViewModel : ObservableObject, IShellWorkflowHost
     public Visibility DateUndoPageVisibility =>
         _currentPage == WorkflowPage.DateUndo ? Visibility.Visible : Visibility.Collapsed;
 
+    public Visibility RotateWorkPageVisibility =>
+        _currentPage == WorkflowPage.RotateWork ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility RotateUndoPageVisibility =>
+        _currentPage == WorkflowPage.RotateUndo ? Visibility.Visible : Visibility.Collapsed;
+
     public string StatusMessage
     {
         get => _statusMessage;
@@ -96,6 +106,19 @@ public sealed class MainViewModel : ObservableObject, IShellWorkflowHost
     public RelayCommand OpenDateUndoCommand => DateWork.OpenDateUndoCommand;
     public RelayCommand SelectAllDateUndoCommand => DateWork.SelectAllDateUndoCommand;
     public RelayCommand SampleDateReviewCommand => DateWork.SampleDateReviewCommand;
+    public RelayCommand StartRotateWorkCommand => RotateWork.StartRotateWorkCommand;
+    public RelayCommand ContinueRotateWorkCommand => RotateWork.ContinueRotateWorkCommand;
+    public RelayCommand ScanRotationsCommand => RotateWork.ScanRotationsCommand;
+    public RelayCommand CreateRotateSnapshotCommand => RotateWork.CreateRotateSnapshotCommand;
+    public RelayCommand ApplyRotationsCommand => RotateWork.ApplyRotationsCommand;
+    public RelayCommand ApproveAllProposedRotationsCommand => RotateWork.ApproveAllProposedCommand;
+    public RelayCommand RotateSelectedClockwiseCommand => RotateWork.RotateSelectedClockwiseCommand;
+    public RelayCommand RotateSelectedCounterClockwiseCommand => RotateWork.RotateSelectedCounterClockwiseCommand;
+    public RelayCommand RotateSelected180Command => RotateWork.RotateSelected180Command;
+    public RelayCommand ResetSelectedRotationCommand => RotateWork.ResetSelectedRotationCommand;
+    public RelayCommand UndoSelectedRotationsCommand => RotateWork.UndoSelectedCommand;
+    public RelayCommand OpenRotateUndoCommand => RotateWork.OpenRotateUndoCommand;
+    public RelayCommand SelectAllRotateUndoCommand => RotateWork.SelectAllRotateUndoCommand;
     public RelayCommand ConfigureDuplicatesCommand => DuplicateWork.ConfigureDuplicatesCommand;
     public RelayCommand ContinueDuplicateWorkCommand => DuplicateWork.ContinueDuplicateWorkCommand;
     public RelayCommand ScanDuplicatesCommand => DuplicateWork.ScanDuplicatesCommand;
@@ -113,6 +136,8 @@ public sealed class MainViewModel : ObservableObject, IShellWorkflowHost
     public ObservableCollection<DateReviewRowViewModel> DateItems => DateWork.DateItems;
     public ObservableCollection<DateUndoRowViewModel> UndoItems => DateWork.UndoItems;
     public ObservableCollection<DateBulkApproveGroup> DateBulkApproveGroups => DateWork.DateBulkApproveGroups;
+    public ObservableCollection<RotateReviewRowViewModel> RotateItems => RotateWork.RotateItems;
+    public ObservableCollection<RotateUndoRowViewModel> RotateUndoItems => RotateWork.UndoItems;
     public ObservableCollection<DuplicateUndoRowViewModel> DuplicateUndoItems => DuplicateWork.DuplicateUndoItems;
 
     public int SampleCount
@@ -141,6 +166,25 @@ public sealed class MainViewModel : ObservableObject, IShellWorkflowHost
 
     public string DateSummary => DateWork.DateSummary;
     public string DateSnapshotName => DateWork.DateSnapshotName;
+
+    public RotateReviewRowViewModel? SelectedRotateItem
+    {
+        get => RotateWork.SelectedRotateItem;
+        set => RotateWork.SelectedRotateItem = value;
+    }
+
+    public ImageSource? RotatePreview => RotateWork.RotatePreview;
+    public string RotatePreviewMessage => RotateWork.RotatePreviewMessage;
+    public bool CanConfirmRotateSnapshot => RotateWork.CanConfirmRotateSnapshot;
+    public bool RotateSnapshotConfirmed
+    {
+        get => RotateWork.RotateSnapshotConfirmed;
+        set => RotateWork.RotateSnapshotConfirmed = value;
+    }
+
+    public string RotateSummary => RotateWork.RotateSummary;
+    public string RotateSnapshotName => RotateWork.RotateSnapshotName;
+    public string RotateReportPath => RotateWork.RotateReportPath;
 
     public bool DuplicateSnapshotConfirmed
     {
@@ -173,6 +217,8 @@ public sealed class MainViewModel : ObservableObject, IShellWorkflowHost
         OnPropertyChanged(nameof(DuplicateWorkPageVisibility));
         OnPropertyChanged(nameof(DateWorkPageVisibility));
         OnPropertyChanged(nameof(DateUndoPageVisibility));
+        OnPropertyChanged(nameof(RotateWorkPageVisibility));
+        OnPropertyChanged(nameof(RotateUndoPageVisibility));
         ReturnToConfigurationCommand.RaiseCanExecuteChanged();
     }
 
@@ -189,11 +235,14 @@ public sealed class MainViewModel : ObservableObject, IShellWorkflowHost
         OnPropertyChanged(nameof(DateSnapshotName));
         OnPropertyChanged(nameof(DateTimezonePolicy));
         OnPropertyChanged(nameof(CanConfirmDateSnapshot));
+        OnPropertyChanged(nameof(RotateSnapshotName));
+        OnPropertyChanged(nameof(CanConfirmRotateSnapshot));
     }
 
     void IShellWorkflowHost.RaiseCommandStates()
     {
         DateWork.RaiseCommandStates();
+        RotateWork.RaiseCommandStates();
         DuplicateWork.RaiseCommandStates();
         ReturnToConfigurationCommand.RaiseCanExecuteChanged();
     }
@@ -224,6 +273,12 @@ public sealed class MainViewModel : ObservableObject, IShellWorkflowHost
 
     internal void MarkDateScanInProgressForTests() =>
         DateWork.MarkDateScanInProgressForTests();
+
+    internal void LoadRotateReviewForTests(OrientationReviewReport report, string reportPath = "orientation-review.json") =>
+        RotateWork.LoadRotateReviewForTests(report, reportPath);
+
+    internal void MarkRotateSnapshotForTests(OrientationSnapshot snapshot) =>
+        RotateWork.MarkRotateSnapshotForTests(snapshot);
 
     internal void PrepareReviewingDuplicateSessionForTests()
     {
@@ -297,6 +352,7 @@ public sealed class MainViewModel : ObservableObject, IShellWorkflowHost
     {
         _workflow.Reset();
         DateWork.Reset();
+        RotateWork.Reset();
         DuplicateWork.Reset();
         ((IShellWorkflowHost)this).Navigate(WorkflowPage.Configuration);
         StatusMessage = "Ready to configure a session.";

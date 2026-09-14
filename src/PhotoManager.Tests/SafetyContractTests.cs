@@ -184,6 +184,7 @@ public sealed class LocalDefaultsTests
             new WorkflowStateMachine(),
             store,
             new DateRepairService(policy),
+            new OrientationRepairService(policy),
             new DuplicateWorkflowService(new PowerShellScriptRunner(), store, policy, root),
             new FakeConfirmationService(true),
             defaults);

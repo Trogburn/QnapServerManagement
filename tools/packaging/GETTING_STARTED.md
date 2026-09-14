@@ -39,6 +39,10 @@ those with **your** folders.
    inside the photo share.
 4. On the NAS, take a snapshot (or other backup) **before** you Apply anything.
 5. Choose one workflow from Configuration:
+   - **Start rotate work** — review EXIF orientation and content-based
+     proposals, then bake approved rotations into the pixels so the photo is
+     upright in every viewer. Use the preview rotate buttons when a photo is
+     still sideways.
    - **Configure and continue to duplicate work** — find duplicate and similar
      photos, review, then quarantine extras.
    - **Start date work** — review timestamp repairs, then apply only approved
@@ -51,6 +55,8 @@ suggestions in the reviewer are not approvals.
 
 ## After a scan
 
+- Rotate work: review photos that EXIF says are sideways or upside down,
+  then Apply. Apply re-encodes JPEG and keeps a backup for Undo.
 - Duplicate work: review groups, then Dry-run, then Apply to quarantine.
 - Date work: review proposed dates, then Apply. Conflicts stay until you
   choose a date.
